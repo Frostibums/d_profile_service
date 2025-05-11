@@ -6,7 +6,11 @@ class JWTConfig(BaseSettings):
     algorithm: str = "RS256"
     exp_minutes: int = 60
 
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="jwt_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="jwt_",
+        extra="ignore",
+    )
 
 
 jwt_settings = JWTConfig()
