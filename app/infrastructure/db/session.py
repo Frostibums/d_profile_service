@@ -1,5 +1,3 @@
-import logging
-
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
@@ -17,5 +15,4 @@ Base = declarative_base()
 
 async def get_session():
     async with async_session() as session:
-        logging.info("NEW SESSION CREATED")
         yield session

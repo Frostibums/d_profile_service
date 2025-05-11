@@ -4,6 +4,7 @@ from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.domain.entities.group import Group
 from app.infrastructure.db.session import Base
 
 
@@ -21,3 +22,16 @@ class GroupORM(Base):
         "ProfileORM",
         back_populates="group",
     )
+
+    def to_domain(self) -> Group:
+        return Group(
+            id=self.id,
+            name=self.name,
+        )
+
+    @classmethod
+    def from_domain(cls, group: Group) -> "GroupORM":
+        return cls(
+            id=group.id,
+            name=group.name,
+        )

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.domain.dto.user import User
+from app.domain.entities.user import User
 
 
 class IAuthService(Protocol):

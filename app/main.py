@@ -1,16 +1,26 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from app.config.app import app_settings
+from app.infrastructure.bus.kafka.consumer import start_kafka_consumer
+from app.infrastructure.logger import setup_logging
 from app.presentation.api.routes import api_router
 
 
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):  # noqa ARG001
+    consumer_task = asyncio.create_task(start_kafka_consumer())
     yield
+    consumer_task.cancel()
+    try:
+        await consumer_task
+    except asyncio.CancelledError:
+        pass
 
 
+setup_logging()
 app = FastAPI(
     title=app_settings.app_name,
     lifespan=lifespan,
