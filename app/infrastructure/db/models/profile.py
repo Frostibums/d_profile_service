@@ -35,12 +35,12 @@ class ProfileORM(Base):
     is_moderated: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        server_default=func.utcnow(),
+        server_default=func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        server_default=func.utcnow(),
-        onupdate=func.utcnow(),
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
     group: Mapped[GroupORM | None] = relationship(
@@ -76,4 +76,5 @@ class ProfileORM(Base):
             first_name=profile.first_name,
             middle_name=profile.middle_name,
             last_name=profile.last_name,
+            created_at=profile.created_at,
         )

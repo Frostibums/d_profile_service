@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 from typing import Any
@@ -22,11 +23,13 @@ async def start_kafka_consumer():
 
 
 async def handle_user_created(data: dict[str, Any]) -> None:
+    logger.info(f"User created event: {data}")
     async with container.get_session() as session:
         profile_service = container.get_profile_service(session)
         profile = Profile(
             id=uuid4(),
             user_id=data.get("user_id"),
+            created_at=datetime.datetime.utcnow(),
         )
         logger.info("Creating profile: %s", profile)
         await profile_service.create(profile)
