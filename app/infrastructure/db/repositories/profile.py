@@ -10,23 +10,26 @@ from app.infrastructure.db.models.profile import ProfileORM
 
 logger = logging.getLogger(__name__)
 
+
 class SQLAlchemyProfileRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, profile: Profile) -> None:
+    async def create(self, profile: Profile) -> Profile:
         orm = ProfileORM.from_domain(profile)
         self.session.add(orm)
         await self.session.commit()
+        return orm.to_domain()
 
-    async def update(self, profile_id: UUID, data: ProfileUpdateDTO) -> None:
+    async def update(self, user_id: UUID, data: ProfileUpdateDTO) -> Profile | None:
         stmt = (
             update(ProfileORM)
-            .where(ProfileORM.id == profile_id)
+            .where(ProfileORM.user_id == user_id)
             .values(**data.to_dict())
         )
         await self.session.execute(stmt)
         await self.session.commit()
+        return await self.get_by_user_id(user_id)
 
     async def get_list(self) -> list[Profile]:
         stmt = select(

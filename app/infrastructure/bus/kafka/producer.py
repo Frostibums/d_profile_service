@@ -1,9 +1,13 @@
 import json
 import logging
+from functools import cache
 
 from aiokafka import AIOKafkaProducer
 
+from app.config.kafka import kafka_settings
+
 logger = logging.getLogger(__name__)
+
 
 class KafkaEventProducer:
     def __init__(self, bootstrap_servers: str):
@@ -17,3 +21,13 @@ class KafkaEventProducer:
 
     async def stop(self):
         await self._producer.stop()
+
+    async def send(self, topic: str, message: dict):
+        await self._producer.send_and_wait(topic, message)
+
+
+@cache
+async def get_kafka_producer() -> KafkaEventProducer:
+    producer = KafkaEventProducer(bootstrap_servers=kafka_settings.bootstrap_servers)
+    await producer.start()
+    return producer

@@ -4,10 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
 from app.domain.dto.profile import ProfileUpdateDTO
-from app.presentation.api.v1.dependencies import get_profile_repo, get_profile_service
+from app.infrastructure.bus.kafka.producer import KafkaEventProducer
+from app.presentation.api.v1.dependencies import (
+    get_producer,
+    get_profile_repo,
+    get_profile_service, get_current_user_id,
+)
 from app.presentation.api.v1.profile.schemas import ProfileOutput, ProfileUpdate
+from app.service.profile import ProfileService
 
 router = APIRouter()
+
 
 @router.post(
     "/{user_id}/group/{group_id}",
@@ -36,6 +43,24 @@ async def remove_user_from_group(
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
+    response_model=ProfileOutput,
+)
+async def get_current_user_profile(
+        user_id: UUID = Depends(get_current_user_id),
+        profile_service: ProfileService = Depends(get_profile_service),
+):
+    profile = await profile_service.get_by_user_id(user_id)
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile for such user not found.",
+        )
+    return profile
+
+
+@router.get(
+    "/all",
+    status_code=status.HTTP_200_OK,
     response_model=list[ProfileOutput],
 )
 async def get_profiles(
@@ -45,7 +70,7 @@ async def get_profiles(
 
 
 @router.get(
-    "/group/{group_id}",
+    "/by-group/{group_id}",
     status_code=status.HTTP_200_OK,
     response_model=list[ProfileOutput],
 )
@@ -77,15 +102,27 @@ async def get_profile(
 
 
 @router.patch(
-    "/{profile_id}",
+    "/{user_id}",
     status_code=status.HTTP_200_OK,
+    response_model=ProfileOutput,
 )
 async def update_profile(
-        profile_id: str,
+        user_id: UUID,
         update_data: ProfileUpdate,
-        profile_service=Depends(get_profile_service),
+        profile_service: ProfileService = Depends(get_profile_service),
 ):
-    await profile_service.update(
-        profile_id=profile_id,
-        update_data=ProfileUpdateDTO(**update_data.model_dump()),
+    updated_profile = await profile_service.update(
+        user_id=user_id,
+        update_data=ProfileUpdateDTO(
+            **update_data.model_dump(
+                exclude_unset=True,
+                exclude_defaults=True,
+            )
+        ),
     )
+    if not updated_profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found",
+        )
+    return updated_profile
